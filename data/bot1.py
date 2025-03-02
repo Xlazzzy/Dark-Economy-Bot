@@ -5,7 +5,7 @@ from EventService import get_events, get_event_detail, get_event_comments
 from NewsService import get_news, get_news_comments, get_news_detail
 from PlaceService import get_places, get_place_detail, get_place_comments
 
-TOKEN = "7622174761:AAH_OwxRTGzk96-WT6uRHeUMvsTvoi0XyC4"
+TOKEN = "кокен"
 bot = telebot.TeleBot(TOKEN)
 
 state = {}
@@ -107,22 +107,25 @@ def message_handler(message):
                     show_places(chat_id, city_code, 1)
                 del state[chat_id]
             else:
-                # Если город не найден, отправляем подсказку
                 available_cities = ", ".join(CITIES.values())
                 bot.send_message(chat_id,
                                  f"Город не найден. Пожалуйста, выберите один из доступных городов: {available_cities}")
 
 def show_events(chat_id, location, page, message_id=None):
-    events_data = get_events(location, page)
+    date_str = datetime.now().strftime("%Y-%m-%d")
+    date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+    unix_timestamp = int(date_obj.timestamp())
+    events_data = get_events(location, page, unix_timestamp)
+
     events = events_data["results"]
     if not events:
         text = f"События в {CITIES_cor[location]} не найдены."
     else:
-        text = f"События в {CITIES_cor[location]}, страница {page}:\n\n"
+        text = f"Ближайшие события в {CITIES_cor[location]}, страница {page}:\n\n"
         for event in events:
             title = event["title"]
-            date_str = datetime.now().strftime("%Y-%m-%d")  # Текущая дата
-            text += f"<b>{title}</b> ({date_str})\n\n"
+            title = title[0].upper() + title[1:]
+            text += f"<b>{title}</b>\n\n"
     markup = types.InlineKeyboardMarkup()
     for event in events:
         btn = types.InlineKeyboardButton(event["title"], callback_data=f"event:{event['id']}")
@@ -135,6 +138,7 @@ def show_events(chat_id, location, page, message_id=None):
         bot.edit_message_text(text, chat_id, message_id, parse_mode="HTML", reply_markup=markup)
     else:
         bot.send_message(chat_id, text, parse_mode="HTML", reply_markup=markup)
+
 
 def show_news(chat_id, page, message_id=None):
     news_data = get_news(page)
@@ -164,9 +168,9 @@ def show_places(chat_id, location, page, message_id=None):
     places_data = get_places(location, page)
     places = places_data["results"]
     if not places:
-        text = f"Места в {location} не найдены."
+        text = f"Места в {CITIES_cor[location]} не найдены."
     else:
-        text = f"Места в {location}, страница {page}:\n\n"
+        text = f"Места в {CITIES_cor[location]}, страница {page}:\n\n"
         for place in places:
             title = place["title"]
             subway = place.get("subway", "N/A")
