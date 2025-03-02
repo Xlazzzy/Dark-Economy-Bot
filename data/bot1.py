@@ -5,11 +5,26 @@ from EventService import get_events, get_event_detail, get_event_comments
 from NewsService import get_news, get_news_comments, get_news_detail
 from PlaceService import get_places, get_place_detail, get_place_comments
 
-TOKEN = "7622174761:AAFwi7d4QXTAh6qjxy5sIzoxoPaih1vgJBs"
+TOKEN = "7622174761:AAH_OwxRTGzk96-WT6uRHeUMvsTvoi0XyC4"
 bot = telebot.TeleBot(TOKEN)
 
 state = {}
 
+CITIES = {
+    "ekb": "Екатеринбург",
+    "kzn": "Казань",
+    "msk": "Москва",
+    "nnv": "Нижний Новгород",
+    "spb": "Санкт-Петербург"
+}
+
+CITIES_cor = {
+    "ekb": "Екатеринбурге",
+    "kzn": "Казани",
+    "msk": "Москве",
+    "nnv": "Нижнем Новгороде",
+    "spb": "Санкт-Петербурге"
+}
 
 @bot.message_handler(commands=['start'])
 def start_message(message):
@@ -39,7 +54,7 @@ def callback_query(call):
     if action == "section":
         section = data[1]
         if section in ["events", "places"]:
-            bot.send_message(chat_id, f"Введите код города для поиска (например, msk для Москвы):")
+            bot.send_message(chat_id, f"Введите город для поиска:")
             state[chat_id] = f"waiting_for_location_{section}"
         elif section == "news":
             show_news(chat_id, 1)
@@ -77,21 +92,33 @@ def message_handler(message):
     if chat_id in state:
         if state[chat_id].startswith("waiting_for_location_"):
             section = state[chat_id].split("_")[-1]
-            location = message.text.strip().lower()
-            if section == "events":
-                show_events(chat_id, location, 1)
-            elif section == "places":
-                show_places(chat_id, location, 1)
-            del state[chat_id]
+            user_input = message.text.strip().lower()
 
+            city_code = None
+            for code, name in CITIES.items():
+                if user_input == name.lower() or user_input == code:
+                    city_code = code
+                    break
+
+            if city_code:
+                if section == "events":
+                    show_events(chat_id, city_code, 1)
+                elif section == "places":
+                    show_places(chat_id, city_code, 1)
+                del state[chat_id]
+            else:
+                # Если город не найден, отправляем подсказку
+                available_cities = ", ".join(CITIES.values())
+                bot.send_message(chat_id,
+                                 f"Город не найден. Пожалуйста, выберите один из доступных городов: {available_cities}")
 
 def show_events(chat_id, location, page, message_id=None):
     events_data = get_events(location, page)
     events = events_data["results"]
     if not events:
-        text = f"События в {location} не найдены."
+        text = f"События в {CITIES_cor[location]} не найдены."
     else:
-        text = f"События в {location}, страница {page}:\n\n"
+        text = f"События в {CITIES_cor[location]}, страница {page}:\n\n"
         for event in events:
             title = event["title"]
             date_str = datetime.now().strftime("%Y-%m-%d")  # Текущая дата
