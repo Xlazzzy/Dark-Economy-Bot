@@ -1,4 +1,5 @@
 import telebot
+import re
 from telebot import types
 from datetime import datetime
 from EventService import get_events, get_event_detail, get_event_comments
@@ -25,6 +26,7 @@ CITIES_cor = {
     "nnv": "Нижнем Новгороде",
     "spb": "Санкт-Петербурге"
 }
+
 
 @bot.message_handler(commands=['start'])
 def start_message(message):
@@ -111,11 +113,12 @@ def message_handler(message):
                 bot.send_message(chat_id,
                                  f"Город не найден. Пожалуйста, выберите один из доступных городов: {available_cities}")
 
+
 def show_events(chat_id, location, page, message_id=None):
     date_str = datetime.now().strftime("%Y-%m-%d")
     date_obj = datetime.strptime(date_str, "%Y-%m-%d")
-    unix_timestamp = int(date_obj.timestamp())
-    events_data = get_events(location, page, unix_timestamp)
+    actual_since = int(date_obj.timestamp())
+    events_data = get_events(location, page, actual_since)
 
     events = events_data["results"]
     if not events:
@@ -164,6 +167,7 @@ def show_news(chat_id, page, message_id=None):
     else:
         bot.send_message(chat_id, text, parse_mode="HTML", reply_markup=markup)
 
+
 def show_places(chat_id, location, page, message_id=None):
     places_data = get_places(location, page)
     places = places_data["results"]
@@ -191,50 +195,106 @@ def show_places(chat_id, location, page, message_id=None):
     else:
         bot.send_message(chat_id, text, parse_mode="HTML", reply_markup=markup)
 
+
 def show_event_detail(chat_id, event_id):
     event = get_event_detail(event_id)
     title = event["title"]
-    description = event["description"].replace("<p>", "").replace("</p>", "") if event["description"] else ""
+    description = event["description"]
+    description = re.sub(r'<[^>]+>', '', description)
     images = event["images"]
-    if images:
-        bot.send_photo(chat_id, images[0]["image"], caption=title)
+
+    date_str = datetime.now().strftime("%Y-%m-%d")
+    date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+    current_timestamp = int(date_obj.timestamp())
+
+    dates_info = "Даты проведения:\n"
+    if event.get("dates"):
+        dif = 0
+        for i, date in enumerate(event["dates"], 1):
+            if date["end"] >= 253370754000:
+                dates_info += "Круглый год весь день"
+                break
+
+            if date["end"] <= current_timestamp:
+                dif += 1
+                continue
+
+            end_date = datetime.fromtimestamp(date["end"]).strftime('%d.%m.%Y')
+            start_date = end_date if date["start"] < 0 else datetime.fromtimestamp(date["start"]).strftime('%d.%m.%Y')
+
+            if start_date == end_date:
+                dates_info += f"{i - dif}. {start_date}\n"
+            else:
+                dates_info += f"{i - dif}. {start_date} - {end_date}\n"
     else:
+        dates_info = "Даты проведения: не указаны\n"
+
+    price_info = f"Цена: {event['price']}" if event.get("price") else "Цена не указана"
+
+    site_url = event.get("site_url", "Сайт не указан")
+
+    try:
+        bot.send_photo(chat_id, images[0]["image"], caption=title)
+    except:
         bot.send_message(chat_id, title)
+
     if description:
         bot.send_message(chat_id, description)
+
+    additional_info = f"{dates_info}\n{price_info}\nСсылка: {site_url}"
+
     markup = types.InlineKeyboardMarkup()
     markup.add(types.InlineKeyboardButton("Комментарии", callback_data=f"comments:event:{event_id}"))
-    bot.send_message(chat_id, "Подробнее:", reply_markup=markup)
+    bot.send_message(chat_id, additional_info, disable_web_page_preview=True, reply_markup=markup)
+
 
 def show_news_detail(chat_id, news_id):
     news = get_news_detail(news_id)
     title = news["title"]
-    description = news["description"].replace("<p>", "").replace("</p>", "") if news["description"] else ""
+    description = news["description"]
+    description = re.sub(r'<[^>]+>', '', description)
     images = news["images"]
-    if images:
+    site_url = news.get("site_url", "Сайт не указан")
+
+    try:
         bot.send_photo(chat_id, images[0]["image"], caption=title)
-    else:
+    except:
         bot.send_message(chat_id, title)
+
     if description:
         bot.send_message(chat_id, description)
+
+    additional_info = f"Ссылка: {site_url}"
+
     markup = types.InlineKeyboardMarkup()
     markup.add(types.InlineKeyboardButton("Комментарии", callback_data=f"comments:news:{news_id}"))
-    bot.send_message(chat_id, "Подробнее:", reply_markup=markup)
+    bot.send_message(chat_id, additional_info, disable_web_page_preview=True, reply_markup=markup)
+
 
 def show_place_detail(chat_id, place_id):
     place = get_place_detail(place_id)
     title = place["title"]
-    description = place["description"].replace("<p>", "").replace("</p>", "") if place["description"] else ""
+    description = place["description"]
+    description = re.sub(r'<[^>]+>', '', description)
     images = place["images"]
-    if images:
+
+    address_info = f"Адрес: {place['address']}" if place.get("address") else "Адрес не указан"
+    timetable_info = f"Расписание: {place['timetable']}" if place.get("timetable") else "Расписание не указано"
+    site_url = place.get("site_url", "Сайт не указан")
+
+    try:
         bot.send_photo(chat_id, images[0]["image"], caption=title)
-    else:
+    except:
         bot.send_message(chat_id, title)
+
     if description:
         bot.send_message(chat_id, description)
+
+    additional_info = f"{address_info}\n{timetable_info}\nСайт: {site_url}"
+
     markup = types.InlineKeyboardMarkup()
     markup.add(types.InlineKeyboardButton("Комментарии", callback_data=f"comments:place:{place_id}"))
-    bot.send_message(chat_id, "Подробнее:", reply_markup=markup)
+    bot.send_message(chat_id, additional_info, disable_web_page_preview=True, reply_markup=markup)
 
 
 def show_comments(chat_id, item_type, item_id):
@@ -268,7 +328,7 @@ def show_comments(chat_id, item_type, item_id):
                 bot.send_message(chat_id, f"{user}: {text_comment[:4000]}... (сообщение обрезано)")
 
     if total_count > 20:
-        warning = f"Показано первые 20 из {total_count} комментариев."
+        warning = f"Показано первые 20 из {total_count} комментариев. Остальные можно прочитать по ссылке"
         bot.send_message(chat_id, warning)
 
 
