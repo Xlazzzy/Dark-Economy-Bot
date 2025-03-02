@@ -118,9 +118,13 @@ def show_events(chat_id, location, page, message_id=None):
     date_str = datetime.now().strftime("%Y-%m-%d")
     date_obj = datetime.strptime(date_str, "%Y-%m-%d")
     actual_since = int(date_obj.timestamp())
-    events_data = get_events(location, page, actual_since)
 
-    events = events_data["results"]
+    events_data = get_events(location, (page + 1) // 2, actual_since)
+    if page % 2 == 1:
+        events = events_data["results"][:10]
+    else:
+        events = events_data["results"][-10:]
+
     if not events:
         text = f"События в {CITIES_cor[location]} не найдены."
     else:
@@ -144,16 +148,17 @@ def show_events(chat_id, location, page, message_id=None):
 
 
 def show_news(chat_id, page, message_id=None):
-    news_data = get_news(page)
-    news_list = news_data["results"]
-    if not news_list:
-        text = "Новости не найдены."
+    news_data = get_news((page + 1) // 2)
+    if page % 2 == 1:
+        news_list = news_data["results"][:10]
     else:
-        text = f"Новости, страница {page}:\n\n"
-        for news in news_list:
-            title = news["title"]
-            pub_date = datetime.fromtimestamp(news["publication_date"]).strftime("%Y-%m-%d")
-            text += f"<b>{title}</b> ({pub_date})\n\n"
+        news_list = news_data["results"][-10:]
+
+    text = f"Новости, страница {page}:\n\n"
+    for news in news_list:
+        title = news["title"]
+        pub_date = datetime.fromtimestamp(news["publication_date"]).strftime("%Y-%m-%d")
+        text += f"<b>{title}</b> ({pub_date})\n\n"
     markup = types.InlineKeyboardMarkup()
     for news in news_list:
         btn = types.InlineKeyboardButton(news["title"], callback_data=f"news:{news['id']}")
@@ -169,8 +174,12 @@ def show_news(chat_id, page, message_id=None):
 
 
 def show_places(chat_id, location, page, message_id=None):
-    places_data = get_places(location, page)
-    places = places_data["results"]
+    places_data = get_places(location, (page + 1) // 2)
+    if page % 2 == 1:
+        places = places_data["results"][:10]
+    else:
+        places = places_data["results"][-10:]
+
     if not places:
         text = f"Места в {CITIES_cor[location]} не найдены."
     else:
