@@ -8,6 +8,8 @@ def get_events(
         page: int = 1,
         actual_since: int = 1
 ) -> Dict[str, Any]:
+    """Returns all events from the database"""
+
     return service.get(
         "events",
         {
@@ -19,7 +21,11 @@ def get_events(
     )
 
 def get_event_detail(event_id: int) -> Dict[str, Any]:
+    """Returns detailed event information"""
+
     return service.get(f"events/{event_id}")
 
 def get_event_comments(event_id: int) -> Dict[str, Any]:
+    """Returns comments on an event"""
+
     return service.get(f"events/{event_id}/comments")

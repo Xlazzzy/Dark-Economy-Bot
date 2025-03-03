@@ -11,7 +11,7 @@ def read(f_name):
 setup(
     name="tourist-bot",
     version="1.0.0",
-    author_email="Egor Rassohin, Boris Boris Suhomlin, Roman Uraykin",
+    author_email="Egor Rassohin, Boris Suhomlin, Roman Uraykin",
     description="Events, news, and places poster",
     long_description=read("README.md"),
     package_data={'': ['*']},

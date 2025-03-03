@@ -30,6 +30,8 @@ CITIES_cor = {
 
 @bot.message_handler(commands=['start'])
 def start_message(message):
+    """The beginning of the dialogue"""
+
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     btn1 = types.KeyboardButton("Меню")
     markup.add(btn1)
@@ -38,6 +40,8 @@ def start_message(message):
 
 @bot.message_handler(func=lambda message: message.text == "Меню")
 def start_message(message):
+    """The beginning of the dialogue"""
+
     markup = types.InlineKeyboardMarkup()
     btn_events = types.InlineKeyboardButton("События", callback_data="section:events")
     btn_news = types.InlineKeyboardButton("Новости", callback_data="section:news")
@@ -48,6 +52,8 @@ def start_message(message):
 
 @bot.callback_query_handler(func=lambda call: not call.data.startswith("more_comments"))
 def callback_query(call):
+    """Processing the response to the request"""
+
     data = call.data.split(":")
     action = data[0]
     chat_id = call.message.chat.id
@@ -90,6 +96,8 @@ def callback_query(call):
 
 @bot.message_handler(func=lambda message: True)
 def message_handler(message):
+    """Message processing"""
+
     chat_id = message.chat.id
     if chat_id in state:
         if state[chat_id].startswith("waiting_for_location_"):
@@ -115,6 +123,8 @@ def message_handler(message):
 
 
 def show_events(chat_id, location, page, message_id=None):
+    """Shows the user the events data"""
+
     date_str = datetime.now().strftime("%Y-%m-%d")
     date_obj = datetime.strptime(date_str, "%Y-%m-%d")
     actual_since = int(date_obj.timestamp())
@@ -148,6 +158,8 @@ def show_events(chat_id, location, page, message_id=None):
 
 
 def show_news(chat_id, page, message_id=None):
+    """Shows the user the news data"""
+
     news_data = get_news((page + 1) // 2)
     if page % 2 == 1:
         news_list = news_data["results"][:10]
@@ -174,6 +186,8 @@ def show_news(chat_id, page, message_id=None):
 
 
 def show_places(chat_id, location, page, message_id=None):
+    """Shows the user the places data"""
+
     places_data = get_places(location, (page + 1) // 2)
     if page % 2 == 1:
         places = places_data["results"][:10]
@@ -206,6 +220,8 @@ def show_places(chat_id, location, page, message_id=None):
 
 
 def show_event_detail(chat_id, event_id):
+    """Shows the user detailed information about the event"""
+
     event = get_event_detail(event_id)
     title = event["title"]
     description = event["description"]
@@ -258,6 +274,8 @@ def show_event_detail(chat_id, event_id):
 
 
 def show_news_detail(chat_id, news_id):
+    """Shows the user detailed information about the news"""
+
     news = get_news_detail(news_id)
     title = news["title"]
     description = news["description"]
@@ -281,6 +299,8 @@ def show_news_detail(chat_id, news_id):
 
 
 def show_place_detail(chat_id, place_id):
+    """Shows the user detailed information about the place"""
+
     place = get_place_detail(place_id)
     title = place["title"]
     description = place["description"]
@@ -307,6 +327,8 @@ def show_place_detail(chat_id, place_id):
 
 
 def show_comments(chat_id, item_type, item_id):
+    """Shows the user comments"""
+
     if item_type == "event":
         comments_data = get_event_comments(item_id)
     elif item_type == "news":
