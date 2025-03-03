@@ -149,6 +149,8 @@ def show_events(chat_id, location, page, message_id=None):
         markup.add(btn)
     if events_data["previous"]:
         markup.add(types.InlineKeyboardButton("Назад", callback_data=f"prev:events:{page}:{location}"))
+    elif page == 2:
+        markup.add(types.InlineKeyboardButton("Назад", callback_data=f"prev:events:{1}:{location}"))
     if events_data["next"]:
         markup.add(types.InlineKeyboardButton("Далее", callback_data=f"next:events:{page}:{location}"))
     if message_id:
@@ -177,6 +179,8 @@ def show_news(chat_id, page, message_id=None):
         markup.add(btn)
     if news_data["previous"]:
         markup.add(types.InlineKeyboardButton("Назад", callback_data=f"prev:news:{page}"))
+    elif page == 2:
+        markup.add(types.InlineKeyboardButton("Назад", callback_data=f"prev:news:{1}"))
     if news_data["next"]:
         markup.add(types.InlineKeyboardButton("Далее", callback_data=f"next:news:{page}"))
     if message_id:
@@ -211,6 +215,8 @@ def show_places(chat_id, location, page, message_id=None):
         markup.add(btn)
     if places_data["previous"]:
         markup.add(types.InlineKeyboardButton("Назад", callback_data=f"prev:places:{page}:{location}"))
+    elif page == 2:
+        markup.add(types.InlineKeyboardButton("Назад", callback_data=f"prev:places:{1}:{location}"))
     if places_data["next"]:
         markup.add(types.InlineKeyboardButton("Далее", callback_data=f"next:places:{page}:{location}"))
     if message_id:
